@@ -1,6 +1,0 @@
-[server]
-runOnSave = true
-
-[snowflake]
-[snowflake.sleep]
-streamlitSleepTimeoutMinutes = 60
