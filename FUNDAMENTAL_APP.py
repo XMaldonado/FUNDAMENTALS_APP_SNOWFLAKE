@@ -211,7 +211,7 @@ page = st.sidebar.selectbox("Choose Page", ["Home", "IG","HY"])
 if page == "Home":
     st.title("Welcome!")
     st.markdown("This is the home page.")
-    #st.image("R:/Strategy/ETF Research/S&P CAPITAL IQ/City Scape, Stock Numbers-1183328264.jpg")
+    #st.image("City Scape.jpg")
 
 
 elif page == "IG":
@@ -465,7 +465,6 @@ elif page == "HY":
             
             st.subheader("Assign Weights to Features")
             similar_df = find_similar_tickers1(filtered_df1.drop_duplicates(), ticker_input.upper(), features=numeric_cols)
-            #st.subheader(f"{ticker_input.upper()}")
             base_row = filtered_df1[filtered_df1['TICKER'] == ticker_input.upper()]
             base_row = base_row.reset_index(drop=True)
             st.write(base_row)
