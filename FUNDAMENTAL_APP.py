@@ -426,17 +426,12 @@ elif page == "HY":
 
 
     if selected_sector == 'Communications':
-        numeric_cols = ['5-Yr Revenue CAGR',
-                                   'EBITDA',
+        numeric_cols = [
+                                   
                                    'EBITDA Margin',
-                                   'Total Debt',
                                    'FCF Margin',
                                    'Debt to EBITDA',
                                    'Debt to Capital',
-                                   'Interest Coverage',
-                                   'Total Cash and Investments',
-                                   'Operating Income',
-                                   'FCF',
                                    'Return on Assets'
                        ]
         tech_df = filtered_df[numeric_cols].drop_duplicates().apply(pd.to_numeric, errors='coerce')
@@ -446,17 +441,12 @@ elif page == "HY":
 
         ticker_input = st.text_input("Enter a TICKER to find similar peers")
         if ticker_input and ticker_input.upper() in df['TICKER'].values:
-            filtered_df1 = filtered_df[['TICKER','5-Yr Revenue CAGR',
-                                   'EBITDA',
+            filtered_df1 = filtered_df[['TICKER',
+                                   
                                    'EBITDA Margin',
-                                   'Total Debt',
                                    'FCF Margin',
                                    'Debt to EBITDA',
                                    'Debt to Capital',
-                                   'Interest Coverage',
-                                   'Total Cash and Investments',
-                                   'Operating Income',
-                                   'FCF',
                                    'Return on Assets'
                                        ]].drop_duplicates()
 
