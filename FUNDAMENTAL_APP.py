@@ -378,18 +378,25 @@ elif page == "HY":
 
     if selected_sector == 'Technology':
         numeric_cols = ['Revenue',
-                        'EBITDA',
+                        
                        'EBITDA Margin',
                        'Net Income Margin',
                        'Return on Assets',
                        'FCF Margin',
-                        'FCF',
-                        'Total Debt',
                         'Interest Coverage',
                         'Debt to EBITDA',
-                        '5-Yr Revenue CAGR',
-                        'Total Cash and Investments',
-                        'Operating Income']
+                        '5-Yr Revenue CAGR'
+                        ]
+        numeric_cols1 = [
+                        
+                       'EBITDA Margin',
+                       'Net Income Margin',
+                       'Return on Assets',
+                       'FCF Margin',
+                        'Interest Coverage',
+                        'Debt to EBITDA',
+                        '5-Yr Revenue CAGR'
+                        ]
         tech_df = filtered_df[numeric_cols].drop_duplicates().apply(pd.to_numeric, errors='coerce')
         avg_df = pd.DataFrame([tech_df.mean()])
         st.subheader("Average Metrics")
@@ -397,18 +404,15 @@ elif page == "HY":
 
         ticker_input = st.text_input("Enter a TICKER to find similar peers")
         if ticker_input and ticker_input.upper() in df['TICKER'].values:
-            filtered_df1 = filtered_df[['TICKER','Revenue', 'EBITDA',
+            filtered_df1 = filtered_df[['TICKER', 'Revenue',
                                    'EBITDA Margin',
                                    'Net Income Margin',
                                    'Return on Assets',
                                    'FCF Margin',
-                                   'FCF',
-                                   'Total Debt',
+                                   
                                    'Interest Coverage',
                                    'Debt to EBITDA',
-                                   '5-Yr Revenue CAGR',
-                                   'Total Cash and Investments',
-                                   'Operating Income']].drop_duplicates()
+                                   '5-Yr Revenue CAGR']].drop_duplicates()
 
             filtered_df1.replace('NM', 0, inplace=True)
             filtered_df1 = filtered_df1.reset_index(drop=True)
@@ -420,9 +424,14 @@ elif page == "HY":
             similar_df = similar_df.reset_index(drop=True)
             st.dataframe(similar_df.drop_duplicates())
             peer_avg = similar_df[numeric_cols]
+            
+            if 'Revenue' in peer_avg.columns:
+                peer_avg = peer_avg.drop(columns='Revenue')
+
+            #st.write(peer_avg)
             base_row = base_row.reset_index(drop=True)
-            plot_radar_comparison3(base_row, peer_avg, numeric_cols, ticker_input.upper(),similar_df['TICKER'])
-            plot_radar_comparison2(base_row, peer_avg, numeric_cols, ticker_input.upper(),similar_df['TICKER'])
+            plot_radar_comparison3(base_row, peer_avg, numeric_cols1, ticker_input.upper(),similar_df['TICKER'])
+            plot_radar_comparison2(base_row, peer_avg, numeric_cols1, ticker_input.upper(),similar_df['TICKER'])
 
 
     if selected_sector == 'Communications':
