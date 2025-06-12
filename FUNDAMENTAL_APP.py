@@ -7,6 +7,8 @@ from sklearn.metrics import pairwise_distances
 import plotly.graph_objects as go
 
 
+st.set_page_config(page_title="Investment Dashboard", layout="wide")
+
 @st.cache_data
 def load_fundamental_data():
     session = get_active_session()
@@ -210,22 +212,19 @@ page = st.sidebar.selectbox("Choose Page", ["Home", "IG","HY"])
 
 if page == "Home":
     st.title("Welcome!")
-    st.markdown("This is the home page.")
-    #st.image("City Scape.jpg")
+    st.markdown("This application contains fundamental data that can aid with investment decisions. ")
+    st.image("City Scape.jpg")
+    st.markdown("Enjoy the search!")
 
 
 elif page == "IG":
     st.title("Investment Grade Dashboard")
-
     df = load_fundamental_data()
     df = rename_columns(df)
     df['Sector'] = df['EXTENDED_CORE_BREAKOUT_SAGE_CORE_LEVEL_4'].map(sector_mapping)
-
     sector_options = sorted(df['Sector'].dropna().unique())
     selected_sector = st.selectbox("Select Sector", sector_options)
-
     filtered_df = df[df['Sector'] == selected_sector].sort_values(by=['TICKER', 'ROOT_CUSIP'])
-
     st.subheader(f"{selected_sector} Sector Data")
     st.dataframe(filtered_df[['ROOT_CUSIP', 'TICKER', 'ISSUER_NAME', 'EXTENDED_CORE_BREAKOUT_SAGE_CORE_LEVEL_4','Revenue', 'EBITDA',
                                    'EBITDA Margin',
@@ -242,18 +241,21 @@ elif page == "IG":
 
     if selected_sector == 'Technology':
         numeric_cols = ['Revenue',
-                        'EBITDA',
                        'EBITDA Margin',
                        'Net Income Margin',
                        'Return on Assets',
                        'FCF Margin',
-                        'FCF',
-                        'Total Debt',
                         'Interest Coverage',
                         'Debt to EBITDA',
-                        '5-Yr Revenue CAGR',
-                        'Total Cash and Investments',
-                        'Operating Income']
+                        '5-Yr Revenue CAGR']
+        numeric_cols1 = ['EBITDA Margin',
+                       'Net Income Margin',
+                       'Return on Assets',
+                       'FCF Margin',
+                        'Interest Coverage',
+                        'Debt to EBITDA',
+                        '5-Yr Revenue CAGR']
+
         tech_df = filtered_df[numeric_cols].drop_duplicates().apply(pd.to_numeric, errors='coerce')
         avg_df = pd.DataFrame([tech_df.mean()])
         st.subheader("Average Metrics")
@@ -261,41 +263,43 @@ elif page == "IG":
 
         ticker_input = st.text_input("Enter a TICKER to find similar peers")
         if ticker_input and ticker_input.upper() in df['TICKER'].values:
-            filtered_df1 = filtered_df[['TICKER','Revenue', 'EBITDA',
+            filtered_df1 = filtered_df[['TICKER','Revenue',
                                    'EBITDA Margin',
                                    'Net Income Margin',
                                    'Return on Assets',
                                    'FCF Margin',
-                                   'FCF',
-                                   'Total Debt',
                                    'Interest Coverage',
                                    'Debt to EBITDA',
-                                   '5-Yr Revenue CAGR',
-                                   'Total Cash and Investments',
-                                   'Operating Income']].drop_duplicates()
+                                   '5-Yr Revenue CAGR']].drop_duplicates()
 
             filtered_df1.replace('NM', 0, inplace=True)
             filtered_df1 = filtered_df1.reset_index(drop=True)
-            weights = {}
-            for feature in numeric_cols:
-                weights[feature] = st.number_input(f"Weight for {feature}", min_value=0.0, max_value=10.0, value=1.0, step=0.1)
-
+            weights = {"Revenue":0.1,
+                        "EBITDA Margin":1,
+                        "Net Income Margin":1,
+                        "Return on Assets":1,
+                        "FCF Margin":1,
+                        "Interest Coverage":1,
+                        "Debt to EBITDA":1,
+                        "5-Yr Revenue CAGR":1}
+            #for feature in numeric_cols:
+                #weights[feature] = st.number_input(f"Weight for {feature}", min_value=0.0, max_value=10.0, value=1.0, step=0.1)
+            #st.write(weights) 
             similar_df = find_similar_tickers(filtered_df1.drop_duplicates(), ticker_input.upper(), features=numeric_cols,weights=weights)
             #st.subheader(f"{ticker_input.upper()}")
             base_row = filtered_df1[filtered_df1['TICKER'] == ticker_input.upper()]
-            st.write(base_row)
+            st.write(base_row.reset_index(drop=True))
             st.subheader("Similar Tickers")
             similar_df = similar_df.reset_index(drop=True)
             st.dataframe(similar_df.drop_duplicates())
             peer_avg = similar_df[numeric_cols]
+            if 'Revenue' in peer_avg.columns:
+                peer_avg = peer_avg.drop(columns='Revenue')
             base_row = base_row.reset_index(drop=True)
-            plot_radar_comparison3(base_row, peer_avg, numeric_cols, ticker_input.upper(),similar_df['TICKER'])
-            plot_radar_comparison2(base_row, peer_avg, numeric_cols, ticker_input.upper(),similar_df['TICKER'])
-
-
+            plot_radar_comparison3(base_row, peer_avg, numeric_cols1, ticker_input.upper(),similar_df['TICKER'])
+            plot_radar_comparison2(base_row, peer_avg, numeric_cols1, ticker_input.upper(),similar_df['TICKER'])
     if selected_sector == 'Communications':
         numeric_cols = ['5-Yr Revenue CAGR',
-                                   'EBITDA',
                                    'EBITDA Margin',
                                    'Total Debt',
                                    'FCF Margin',
@@ -304,7 +308,14 @@ elif page == "IG":
                                    'Interest Coverage',
                                    'Total Cash and Investments',
                                    'Operating Income',
-                                   'FCF',
+                                   'Return on Assets'
+                       ]
+        numeric_cols1 = ['5-Yr Revenue CAGR',
+                                   'EBITDA Margin',
+                                   'FCF Margin',
+                                   'Debt to EBITDA',
+                                   'Debt to Capital',
+                                   'Interest Coverage',
                                    'Return on Assets'
                        ]
         tech_df = filtered_df[numeric_cols].drop_duplicates().apply(pd.to_numeric, errors='coerce')
@@ -315,7 +326,6 @@ elif page == "IG":
         ticker_input = st.text_input("Enter a TICKER to find similar peers")
         if ticker_input and ticker_input.upper() in df['TICKER'].values:
             filtered_df1 = filtered_df[['TICKER','5-Yr Revenue CAGR',
-                                   'EBITDA',
                                    'EBITDA Margin',
                                    'Total Debt',
                                    'FCF Margin',
@@ -324,7 +334,6 @@ elif page == "IG":
                                    'Interest Coverage',
                                    'Total Cash and Investments',
                                    'Operating Income',
-                                   'FCF',
                                    'Return on Assets'
                                        ]].drop_duplicates()
 
@@ -332,12 +341,18 @@ elif page == "IG":
             filtered_df1 = filtered_df1.reset_index(drop=True)
             
             st.subheader("Assign Weights to Features")
-            weights = {}
-            for feature in numeric_cols:
-                weights[feature] = st.number_input(f"Weight for {feature}", min_value=0.0, max_value=10.0, value=1.0, step=0.1)
-
+            weights = { "Revenue":1,
+                        "5-Yr Revenue CAGR":1,
+                        "EBITDA Margin":1,
+                        "Total Debt":1,
+                        "FCF Margin":1,
+                        "Debt to EBITDA":1,
+                        "Debt to Capital":1,
+                        "Interest Coverage":1,
+                        "Total Cash and Investments":1,
+                        "Operating Income":1,
+                        "Return on Assets":1}
             similar_df = find_similar_tickers(filtered_df1.drop_duplicates(), ticker_input.upper(), features=numeric_cols,weights=weights)
-            #st.subheader(f"{ticker_input.upper()}")
             base_row = filtered_df1[filtered_df1['TICKER'] == ticker_input.upper()]
             base_row = base_row.reset_index(drop=True)
             st.write(base_row)
@@ -345,132 +360,8 @@ elif page == "IG":
             similar_df = similar_df.reset_index(drop=True)
             st.dataframe(similar_df.drop_duplicates())
             peer_avg = similar_df[numeric_cols]
-            #st.dataframe(peer_avg)
-            #st.write(similar_df['TICKER'])
-            plot_radar_comparison3(base_row, peer_avg, numeric_cols, ticker_input.upper(),similar_df['TICKER'])
-            plot_radar_comparison2(base_row, peer_avg, numeric_cols, ticker_input.upper(),similar_df['TICKER'])
-
-elif page == "HY":
-    st.title("High Yield")
-
-    df = load_fundamental_data()
-    df = rename_columns(df)
-    df['Sector'] = df['EXTENDED_CORE_BREAKOUT_SAGE_CORE_LEVEL_4'].map(sector_mapping)
-
-    sector_options = sorted(df['Sector'].dropna().unique())
-    selected_sector = st.selectbox("Select Sector", sector_options)
-
-    filtered_df = df[df['Sector'] == selected_sector].sort_values(by=['TICKER', 'ROOT_CUSIP'])
-
-    st.subheader(f"{selected_sector} Sector Data")
-    st.dataframe(filtered_df[['ROOT_CUSIP', 'TICKER', 'ISSUER_NAME', 'EXTENDED_CORE_BREAKOUT_SAGE_CORE_LEVEL_4','Revenue', 'EBITDA',
-                                   'EBITDA Margin',
-                                   'Net Income Margin',
-                                   'Return on Assets',
-                                   'FCF Margin',
-                                   'FCF',
-                                   'Total Debt',
-                                   'Interest Coverage',
-                                   'Debt to EBITDA',
-                                   '5-Yr Revenue CAGR',
-                                   'Total Cash and Investments',
-                                   'Operating Income']].drop_duplicates().reset_index(drop=True), use_container_width=True)
-
-    if selected_sector == 'Technology':
-        numeric_cols = ['Revenue',
-                        
-                       'EBITDA Margin',
-                       'Net Income Margin',
-                       'Return on Assets',
-                       'FCF Margin',
-                        'Interest Coverage',
-                        'Debt to EBITDA',
-                        '5-Yr Revenue CAGR'
-                        ]
-        numeric_cols1 = [
-                        
-                       'EBITDA Margin',
-                       'Net Income Margin',
-                       'Return on Assets',
-                       'FCF Margin',
-                        'Interest Coverage',
-                        'Debt to EBITDA',
-                        '5-Yr Revenue CAGR'
-                        ]
-        tech_df = filtered_df[numeric_cols].drop_duplicates().apply(pd.to_numeric, errors='coerce')
-        avg_df = pd.DataFrame([tech_df.mean()])
-        st.subheader("Average Metrics")
-        st.dataframe(avg_df, use_container_width=True)
-
-        ticker_input = st.text_input("Enter a TICKER to find similar peers")
-        if ticker_input and ticker_input.upper() in df['TICKER'].values:
-            filtered_df1 = filtered_df[['TICKER', 'Revenue',
-                                   'EBITDA Margin',
-                                   'Net Income Margin',
-                                   'Return on Assets',
-                                   'FCF Margin',
-                                   
-                                   'Interest Coverage',
-                                   'Debt to EBITDA',
-                                   '5-Yr Revenue CAGR']].drop_duplicates()
-
-            filtered_df1.replace('NM', 0, inplace=True)
-            filtered_df1 = filtered_df1.reset_index(drop=True)
-            similar_df = find_similar_tickers1(filtered_df1.drop_duplicates(), ticker_input.upper(), features=numeric_cols)
-            #st.subheader(f"{ticker_input.upper()}")
-            base_row = filtered_df1[filtered_df1['TICKER'] == ticker_input.upper()]
-            st.write(base_row)
-            st.subheader("Similar Tickers")
-            similar_df = similar_df.reset_index(drop=True)
-            st.dataframe(similar_df.drop_duplicates())
-            peer_avg = similar_df[numeric_cols]
-            
-            if 'Revenue' in peer_avg.columns:
-                peer_avg = peer_avg.drop(columns='Revenue')
-
-            #st.write(peer_avg)
-            base_row = base_row.reset_index(drop=True)
             plot_radar_comparison3(base_row, peer_avg, numeric_cols1, ticker_input.upper(),similar_df['TICKER'])
             plot_radar_comparison2(base_row, peer_avg, numeric_cols1, ticker_input.upper(),similar_df['TICKER'])
 
-
-    if selected_sector == 'Communications':
-        numeric_cols = [
-                                   
-                                   'EBITDA Margin',
-                                   'FCF Margin',
-                                   'Debt to EBITDA',
-                                   'Debt to Capital',
-                                   'Return on Assets'
-                       ]
-        tech_df = filtered_df[numeric_cols].drop_duplicates().apply(pd.to_numeric, errors='coerce')
-        avg_df = pd.DataFrame([tech_df.mean()])
-        st.subheader("Average Metrics")
-        st.dataframe(avg_df, use_container_width=True)
-
-        ticker_input = st.text_input("Enter a TICKER to find similar peers")
-        if ticker_input and ticker_input.upper() in df['TICKER'].values:
-            filtered_df1 = filtered_df[['TICKER',
-                                   
-                                   'EBITDA Margin',
-                                   'FCF Margin',
-                                   'Debt to EBITDA',
-                                   'Debt to Capital',
-                                   'Return on Assets'
-                                       ]].drop_duplicates()
-
-            filtered_df1.replace('NM', 0, inplace=True)
-            filtered_df1 = filtered_df1.reset_index(drop=True)
-            
-            st.subheader("Assign Weights to Features")
-            similar_df = find_similar_tickers1(filtered_df1.drop_duplicates(), ticker_input.upper(), features=numeric_cols)
-            base_row = filtered_df1[filtered_df1['TICKER'] == ticker_input.upper()]
-            base_row = base_row.reset_index(drop=True)
-            st.write(base_row)
-            st.subheader("Similar Tickers")
-            similar_df = similar_df.reset_index(drop=True)
-            st.dataframe(similar_df.drop_duplicates())
-            peer_avg = similar_df[numeric_cols]
-            plot_radar_comparison3(base_row, peer_avg, numeric_cols, ticker_input.upper(),similar_df['TICKER'])
-            plot_radar_comparison2(base_row, peer_avg, numeric_cols, ticker_input.upper(),similar_df['TICKER'])
-
+elif page == "HY":
+    st.title("High Yield")
