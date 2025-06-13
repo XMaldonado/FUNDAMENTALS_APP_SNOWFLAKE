@@ -5,7 +5,7 @@ from snowflake.snowpark.context import get_active_session
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import pairwise_distances
 import plotly.graph_objects as go
-
+import plotly.express as px 
 
 st.set_page_config(page_title="Investment Dashboard", layout="wide")
 
@@ -261,6 +261,26 @@ elif page == "IG":
         st.subheader("Average Metrics")
         st.dataframe(avg_df, use_container_width=True)
 
+        
+        numeric_df = filtered_df[numeric_cols].drop_duplicates().apply(pd.to_numeric, errors='coerce')
+        on = st.toggle("Box Plots")
+        if on:
+            st.write("Box Plots activated!")
+
+            # Let the user select one or more metrics
+            selected_metrics = st.multiselect("Select metrics to display", numeric_cols, default=numeric_cols[:])
+            
+            # Only plot if at least one metric is selected
+            if selected_metrics:
+                melted_df = numeric_df[selected_metrics].melt(var_name='Metric', value_name='Value').dropna()
+                fig = px.box(melted_df, x='Metric', y='Value', orientation='v', title='Box Plots of Selected Financial Metrics')
+                fig.update_layout(height=600)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Please select at least one metric to display.")
+        
+
+
         ticker_input = st.text_input("Enter a TICKER to find similar peers")
         if ticker_input and ticker_input.upper() in df['TICKER'].values:
             filtered_df1 = filtered_df[['TICKER','Revenue',
@@ -323,6 +343,27 @@ elif page == "IG":
         st.subheader("Average Metrics")
         st.dataframe(avg_df, use_container_width=True)
 
+
+        numeric_df = filtered_df[numeric_cols].drop_duplicates().apply(pd.to_numeric, errors='coerce')
+        on = st.toggle("Box Plots")
+        if on:
+            st.write("Box Plots activated!")
+
+            # Let the user select one or more metrics
+            selected_metrics = st.multiselect("Select metrics to display", numeric_cols, default=numeric_cols[:])
+            
+            # Only plot if at least one metric is selected
+            if selected_metrics:
+                melted_df = numeric_df[selected_metrics].melt(var_name='Metric', value_name='Value').dropna()
+                fig = px.box(melted_df, x='Metric', y='Value', orientation='v', title='Box Plots of Selected Financial Metrics')
+                fig.update_layout(height=600)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Please select at least one metric to display.")
+
+
+
+        
         ticker_input = st.text_input("Enter a TICKER to find similar peers")
         if ticker_input and ticker_input.upper() in df['TICKER'].values:
             filtered_df1 = filtered_df[['TICKER','5-Yr Revenue CAGR',
@@ -341,7 +382,7 @@ elif page == "IG":
             filtered_df1 = filtered_df1.reset_index(drop=True)
             
             st.subheader("Assign Weights to Features")
-            weights = { "Revenue":1,
+            weights = { "Revenue":.5,
                         "5-Yr Revenue CAGR":1,
                         "EBITDA Margin":1,
                         "Total Debt":1,
